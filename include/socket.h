@@ -1,6 +1,9 @@
 #ifndef SOCKET_H
 #define SOCKET_H
 
+#include <cstddef>
+#include <string>
+
 int count_hops(std::string server_ip, int server_port);
 int recv_string(int socket, std::string & message, unsigned int & last_char,
 		struct timeval * timeout = NULL, unsigned int * recv_time = NULL);

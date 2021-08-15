@@ -1,6 +1,9 @@
 #ifndef DESYNC_H
 #define DESYNC_H
 
+#include <atomic>
+#include <string>
+
 int sniff_ack_packet(std::string * packet, std::string ip_srv, int port_srv,
 				int port_local, std::atomic<bool> * flag);
 int sniff_handshake_packet(std::string * packet, std::string ip_srv,

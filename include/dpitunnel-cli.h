@@ -1,55 +1,8 @@
 #ifndef DPITUNNEL_CLI_H
 #define DPITUNNEL_CLI_H
 
-#include <iostream>
-#include <atomic>
-#include <cerrno>
-#include <regex>
-#include <random>
-#include <ctime>
-#include <chrono>
+#include <map>
 #include <string>
-#include <cstring>
-#include <fstream>
-#include <sstream>
-#include <utility>
-#include <arpa/inet.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/prctl.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#include <netinet/tcp.h>
-#include <linux/netlink.h>
-#include <linux/rtnetlink.h>
-#include <linux/wireless.h>
-#include <linux/if_ether.h>
-#include <thread>
-#include <poll.h>
-#include <unistd.h>
-#include <getopt.h>
-
-#include <netlink/netlink.h>    //lots of netlink functions
-#include <netlink/genl/genl.h>  //genl_connect, genlmsg_put
-#include <netlink/genl/family.h>
-#include <netlink/genl/ctrl.h>  //genl_ctrl_resolve
-#include <linux/nl80211.h>
-
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-
-#define CPPHTTPLIB_OPENSSL_SUPPORT
-#include <cpp-httplib/httplib.h>
-
-#include <RawSocket/CheckSum.h>
-
-#include <dnslib/exception.h>
-#include <dnslib/message.h>
-#include <dnslib/rr.h>
-
-#include <base64.h>
 
 enum Desync_zero_attacks {
 	DESYNC_ZERO_FAKE,

@@ -2,6 +2,10 @@
 
 #include "ssl.h"
 
+#include <fstream>
+#include <sstream>
+#include <iostream>
+
 extern struct Settings_s Settings;
 
 int load_ca_bundle() {

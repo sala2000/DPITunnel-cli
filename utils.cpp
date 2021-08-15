@@ -2,6 +2,11 @@
 
 #include "utils.h"
 
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <vector>
+#include <unistd.h>
+
 bool is_space_or_tab(char c) { return c == ' ' || c == '\t'; }
 
 std::pair<size_t, size_t> trim(const char *b, const char *e, size_t left,

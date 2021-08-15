@@ -1,6 +1,6 @@
-#include "dpitunnel-cli.h"
-
 #include "packet.h"
+
+#include <regex>
 
 int parse_request(const std::string & request, std::string & method, std::string & host, int & port) {
 	// Extract method

@@ -4,6 +4,19 @@
 #include "socket.h"
 #include "utils.h"
 
+#include <arpa/inet.h>
+#include <cerrno>
+#include <chrono>
+#include <cstring>
+#include <iostream>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <poll.h>
+#include <unistd.h>
+
+#include <RawSocket/CheckSum.h>
+
 extern struct Settings_s Settings;
 
 const std::string FAKE_TLS_PACKET(

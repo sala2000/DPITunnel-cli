@@ -3,6 +3,20 @@
 #include "socket.h"
 #include "desync.h"
 
+#include <arpa/inet.h>
+#include <cerrno>
+#include <cstring>
+#include <chrono>
+#include <string>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
+#include <iostream>
+#include <thread>
+#include <unistd.h>
+
 extern struct Settings_s Settings;
 
 int count_hops(std::string server_ip, int server_port) {
@@ -52,7 +66,7 @@ int count_hops(std::string server_ip, int server_port) {
         serv_addr.sin_family = AF_INET;
         serv_addr.sin_addr.s_addr = inet_addr(server_ip.c_str());
         serv_addr.sin_port = htons(server_port);
-        memset(serv_addr.sin_zero, '\0', sizeof(serv_addr.sin_zero));
+        std::memset(serv_addr.sin_zero, '\0', sizeof(serv_addr.sin_zero));
 
 	// Create raw socket to send packets with low ttl
 	int sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);

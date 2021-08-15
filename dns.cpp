@@ -4,6 +4,24 @@
 #include "ssl.h"
 #include "utils.h"
 
+#include <arpa/inet.h>
+#include <cerrno>
+#include <cstring>
+#include <iostream>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <vector>
+#include <netdb.h>
+
+#include <dnslib/exception.h>
+#include <dnslib/message.h>
+#include <dnslib/rr.h>
+
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include <cpp-httplib/httplib.h>
+
+#include <base64.h>
+
 extern struct Settings_s Settings;
 
 int resolve_host_over_dns(const std::string & host, std::string & ip) {
@@ -11,7 +29,7 @@ int resolve_host_over_dns(const std::string & host, std::string & ip) {
 	ip.resize(50, ' ');
 
 	struct addrinfo hints, *res;
-	memset(&hints, 0, sizeof(hints));
+	std::memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 

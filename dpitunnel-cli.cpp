@@ -10,6 +10,20 @@
 #include "socket.h"
 #include "utils.h"
 
+#include <arpa/inet.h>
+#include <cerrno>
+#include <cstring>
+#include <fcntl.h>
+#include <iostream>
+#include <thread>
+#include <sys/prctl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <getopt.h>
+#include <poll.h>
+#include <unistd.h>
+
 const std::string CONNECTION_ESTABLISHED_RESPONSE("HTTP/1.1 200 Connection established\r\n\r\n");
 const std::string PROCESS_NAME("DPITunnel-cli");
 int Interrupt_pipe[2];

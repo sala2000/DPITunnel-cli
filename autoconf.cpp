@@ -7,6 +7,21 @@
 #include "ssl.h"
 #include "utils.h"
 
+#include <algorithm>
+#include <arpa/inet.h>
+#include <cerrno>
+#include <chrono>
+#include <cstring>
+#include <iostream>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+#include <openssl/x509v3.h>
+#include <sys/socket.h>
+#include <thread>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <unistd.h>
+
 extern struct Settings_s Settings;
 
 bool verify_cert_common_name(X509 *server_cert, std::string host) {

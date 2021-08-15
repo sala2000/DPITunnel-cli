@@ -4,6 +4,27 @@
 #include "profiles.h"
 #include "utils.h"
 
+#include <atomic>
+#include <cerrno>
+#include <cstring>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <iostream>
+#include <net/if.h>
+#include <linux/netlink.h>
+#include <linux/rtnetlink.h>
+#include <linux/nl80211.h>
+#include <linux/wireless.h>
+#include <poll.h>
+#include <sys/ioctl.h>
+
+#include <unistd.h>
+
+#include <netlink/netlink.h>    //lots of netlink functions
+#include <netlink/genl/genl.h>  //genl_connect, genlmsg_put
+#include <netlink/genl/family.h>
+#include <netlink/genl/ctrl.h>
+
 extern int Interrupt_pipe[2];
 extern std::atomic<bool> stop_flag;
 extern struct Settings_s Settings;

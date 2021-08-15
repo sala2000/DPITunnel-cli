@@ -3,6 +3,8 @@
 #include "profiles.h"
 #include "netiface.h"
 
+#include <iostream>
+
 // Map contains net interface name to that apply profile and profile settings
 std::map<std::string, struct Settings_s> Profiles;
 extern struct Settings_s Settings;
