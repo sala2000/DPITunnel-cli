@@ -501,14 +501,10 @@ int main(int argc, char* argv[]) {
 	// Init interrupt pipe (used to interrupt poll() calls)
 	pipe(Interrupt_pipe);
 
-	// If we have profiles, choose profile and start route monitor thread to correctly change profiles
-	if(!Profiles.empty()) {
+	// If we have profiles, choose profile
+	if(!Profiles.empty())
 		if(change_profile() == -1)
 			return -1; //exit_failure();
-
-		std::thread t1(route_monitor_thread);
-		t1.detach();
-	}
 
 	if(Settings.doh)
 		if(load_ca_bundle() == -1)
@@ -553,6 +549,12 @@ int main(int argc, char* argv[]) {
 
 	if(Settings.daemon)
 		daemonize();
+
+	// Start route monitor thread to correctly change profiles
+	if(!Profiles.empty()) {
+		std::thread t1(route_monitor_thread);
+		t1.detach();
+	}
 
 	accept_client_cycle(server_socket);
 
