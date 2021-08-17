@@ -2098,9 +2098,6 @@ socket_t create_socket(const char *host, int port, int address_family,
   auto service = std::to_string(port);
 
   if (getaddrinfo(host, service.c_str(), &hints, &result)) {
-#ifdef __linux__
-    res_init();
-#endif
     return INVALID_SOCKET;
   }
 
