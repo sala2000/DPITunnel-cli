@@ -362,7 +362,7 @@ int run_autoconf() {
 		is_https = false;
 		port = 80;
 		host.erase(0, 7);
-	} else if(host.rfind("http://", 0) == 0) {
+	} else if(host.rfind("https://", 0) == 0) {
 		is_https = true;
 		port = 443;
 		host.erase(0, 8);
