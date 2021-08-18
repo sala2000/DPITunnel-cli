@@ -27,7 +27,6 @@
 
 extern int Interrupt_pipe[2];
 extern std::atomic<bool> stop_flag;
-extern struct Settings_s Settings;
 
 struct Netlink {
 	int id;

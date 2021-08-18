@@ -22,7 +22,7 @@
 
 #include <base64.h>
 
-extern struct Settings_s Settings;
+extern struct Profile_s Profile;
 
 int resolve_host_over_dns(const std::string & host, std::string & ip) {
 
@@ -92,7 +92,7 @@ int resolve_host_over_doh(const std::string & host, std::string & ip) {
 	// Encode with base64
 	dns_buf = base64_encode(dns_buf);
 
-	std::string serv_host = Settings.doh_server;
+	std::string serv_host = Profile.doh_server;
 	std::string path;
 	// Remove scheme (https://)
 	if(serv_host.size() >= 8 && serv_host.substr(0, 8) == "https://")
@@ -169,7 +169,7 @@ int resolve_host(const std::string & host, std::string & ip) {
 		return 0;
 	}
 
-	if(Settings.doh)
+	if(Profile.doh)
 		return resolve_host_over_doh(host, ip);
 	else
 		return resolve_host_over_dns(host, ip);

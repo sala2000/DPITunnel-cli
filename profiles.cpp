@@ -6,10 +6,10 @@
 #include <iostream>
 
 // Map contains net interface name to that apply profile and profile settings
-std::map<std::string, struct Settings_s> Profiles;
-extern struct Settings_s Settings;
+std::map<std::string, struct Profile_s> Profiles;
+extern struct Profile_s Profile;
 
-void add_profile(std::string name, Settings_s profile) {
+void add_profile(std::string name, Profile_s profile) {
 	Profiles[name] = profile;
 }
 
@@ -31,11 +31,11 @@ int change_profile(std::string * choosen_profile_name /*= NULL*/) {
 
 	auto search = Profiles.find(iface + (wifi_point.empty() ? "" : (':' + wifi_point)));
 	if(search != Profiles.end())
-		Settings = search->second;
+		Profile = search->second;
 	else {
 		search = Profiles.find("default");
 		if(search != Profiles.end())
-			Settings = search->second;
+			Profile = search->second;
 		else {
 			std::cerr << "Failed to find profile" << std::endl;
 			return -1;

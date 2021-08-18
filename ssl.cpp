@@ -6,26 +6,26 @@
 #include <sstream>
 #include <iostream>
 
-extern struct Settings_s Settings;
+extern struct Settings_perst_s Settings_perst;
 
 int load_ca_bundle() {
 	std::ifstream file;
-	file.open(Settings.ca_bundle_path);
+	file.open(Settings_perst.ca_bundle_path);
 	if(!file) {
 		std::cerr << "Failed to open CA Bundle (SSL certs). File "
-				<< Settings.ca_bundle_path << " not found" << std::endl;
+				<< Settings_perst.ca_bundle_path << " not found" << std::endl;
 		return -1;
 	}
 
 	std::stringstream stream;
 	stream << file.rdbuf();
-	Settings.ca_bundle = stream.str();
+	Settings_perst.ca_bundle = stream.str();
 
 	return 0;
 }
 
 X509_STORE *gen_x509_store() {
-	BIO *cbio = BIO_new_mem_buf(Settings.ca_bundle.c_str(), Settings.ca_bundle.size());
+	BIO *cbio = BIO_new_mem_buf(Settings_perst.ca_bundle.c_str(), Settings_perst.ca_bundle.size());
 	X509_STORE *cts;
 	if((cts = X509_STORE_new()) == NULL)
 		return NULL;

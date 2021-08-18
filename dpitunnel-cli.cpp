@@ -29,8 +29,9 @@ const std::string CONNECTION_ERROR_RESPONSE("HTTP/1.1 0 Connection establish pro
 const std::string PROCESS_NAME("DPITunnel-cli");
 int Interrupt_pipe[2];
 std::atomic<bool> stop_flag;
-struct Settings_s Settings;
-extern std::map<std::string, struct Settings_s> Profiles;
+struct Settings_perst_s Settings_perst;
+struct Profile_s Profile;
+extern std::map<std::string, struct Profile_s> Profiles;
 
 void process_client_cycle(int client_socket) {
 	// last_char indicates position of string end
@@ -52,7 +53,7 @@ void process_client_cycle(int client_socket) {
 	timeout_recv.tv_sec = 5;
 	timeout_recv.tv_usec = 0;
 
-	std::string buffer(Settings.buffer_size, ' ');
+	std::string buffer(Profile.buffer_size, ' ');
 
 	if(recv_string(client_socket, buffer, last_char, &timeout_recv) == -1) {
 		close(client_socket);
@@ -105,7 +106,7 @@ void process_client_cycle(int client_socket) {
 	int status;
 	std::thread sniff_thread;
 	std::string sniffed_packet;
-	if(Settings.desync_attacks) {
+	if(Profile.desync_attacks) {
 		sniff_thread = std::thread(sniff_handshake_packet, &sniffed_packet,
 					server_ip, server_port, &local_port, &flag, &status);
 	}
@@ -113,7 +114,7 @@ void process_client_cycle(int client_socket) {
 	// Connect to remote server
 	int server_socket;
 	if(init_remote_server_socket(server_socket, server_ip, server_port) == -1) {
-		if(Settings.desync_attacks) {
+		if(Profile.desync_attacks) {
 			// Stop sniff thread
 			flag = false;
 			if(sniff_thread.joinable()) sniff_thread.join();
@@ -129,7 +130,7 @@ void process_client_cycle(int client_socket) {
 		|| setsockopt(server_socket, IPPROTO_TCP, TCP_NODELAY, (char *) &yes, sizeof(yes)) < 0) {
 		std::cerr << "Can't disable TCP Nagle's algorithm with setsockopt(). Errno: "
 				<< std::strerror(errno) << std::endl;
-		if(Settings.desync_attacks) {
+		if(Profile.desync_attacks) {
 			// Stop sniff thread
 			flag = false;
 			if(sniff_thread.joinable()) sniff_thread.join();
@@ -145,7 +146,7 @@ void process_client_cycle(int client_socket) {
 	socklen_t len = sizeof(local_addr);
 	if(getsockname(server_socket, (struct sockaddr *) &local_addr, &len) == -1) {
 		std::cerr << "Failed to get local port. Errno: " << std::strerror(errno) << std::endl;
-		if(Settings.desync_attacks) {
+		if(Profile.desync_attacks) {
 			// Stop sniff thread
 			flag = false;
 			if(sniff_thread.joinable()) sniff_thread.join();
@@ -164,7 +165,7 @@ void process_client_cycle(int client_socket) {
 			return;
 		}
 
-	if(Settings.desync_attacks) {
+	if(Profile.desync_attacks) {
 		// Get received SYN, ACK packet
 		if(sniff_thread.joinable()) sniff_thread.join();
 		if(status == -1) {
@@ -345,18 +346,18 @@ int parse_cmdline(int argc, char* argv[]) {
 
 	int res, opt_id = 0;
 	std::string curr_profile_name = "";
-	struct Settings_s settings;
+	struct Profile_s profile;
 	while((res = getopt_long_only(argc, argv, "", options, &opt_id)) != -1) {
 		if(res) return -1;
 		switch(opt_id) {
 			case 0: // ip
-				settings.server_address = std::string(optarg);
+				Settings_perst.server_address = std::string(optarg);
 
 				break;
 
 			case 1: // port
-				settings.server_port = atoi(optarg);
-				if(settings.server_port < 0 || settings.server_port > 65535) {
+				Settings_perst.server_port = atoi(optarg);
+				if(Settings_perst.server_port < 0 || Settings_perst.server_port > 65535) {
 					std::cerr << "-port invalid argument" << std::endl;
 					return -1;
 				}
@@ -364,8 +365,8 @@ int parse_cmdline(int argc, char* argv[]) {
 				break;
 
 			case 2: // buffer-size
-				settings.buffer_size = atoi(optarg);
-				if(settings.buffer_size < 128 || settings.buffer_size > 65535) {
+				profile.buffer_size = atoi(optarg);
+				if(profile.buffer_size < 128 || profile.buffer_size > 65535) {
 					std::cerr << "-buffer-size invalid argument" << std::endl;
 					return -1;
 				}
@@ -373,8 +374,8 @@ int parse_cmdline(int argc, char* argv[]) {
 				break;
 
 			case 3: // split-position
-				settings.split_position = atoi(optarg);
-				if(settings.split_position > 65535) {
+				profile.split_position = atoi(optarg);
+				if(profile.split_position > 65535) {
 					std::cerr << "-split-position invalid argument" << std::endl;
 					return -1;
 				}
@@ -382,8 +383,8 @@ int parse_cmdline(int argc, char* argv[]) {
 				break;
 
 			case 4: // ttl
-				settings.fake_packets_ttl = atoi(optarg);
-				if(settings.fake_packets_ttl < 1 || settings.fake_packets_ttl > 255) {
+				profile.fake_packets_ttl = atoi(optarg);
+				if(profile.fake_packets_ttl < 1 || profile.fake_packets_ttl > 255) {
 					std::cerr << "-ttl invalid argument" << std::endl;
 					return -1;
 				}
@@ -391,47 +392,47 @@ int parse_cmdline(int argc, char* argv[]) {
 				break;
 
 			case 5: // use-doh
-				settings.doh = true;
+				profile.doh = true;
 
 				break;
 
 			case 6: // doh-server
-				settings.doh_server = optarg;
+				profile.doh_server = optarg;
 
 				break;
 
 			case 7: // ca-bundle-path
-				settings.ca_bundle_path = optarg;
+				Settings_perst.ca_bundle_path = optarg;
 
 				break;
 
 			case 8: // split-at-sni
-				settings.split_at_sni = true;
+				profile.split_at_sni = true;
 
 				break;
 
 			case 9: // desync-attacks
 				{
-					settings.desync_attacks = true;
+					profile.desync_attacks = true;
 					char *e,*p = optarg;
 					while(p) {
 						e = strchr(p,',');
 						if(e) *e++=0;
 
 						if(!strcmp(p, ZERO_ATTACKS_NAMES.at(DESYNC_ZERO_FAKE).c_str()))
-							settings.desync_zero_attack = DESYNC_ZERO_FAKE;
+							profile.desync_zero_attack = DESYNC_ZERO_FAKE;
 						else if(!strcmp(p, ZERO_ATTACKS_NAMES.at(DESYNC_ZERO_RST).c_str()))
-							settings.desync_zero_attack = DESYNC_ZERO_RST;
+							profile.desync_zero_attack = DESYNC_ZERO_RST;
 						else if(!strcmp(p, ZERO_ATTACKS_NAMES.at(DESYNC_ZERO_RSTACK).c_str()))
-							settings.desync_zero_attack = DESYNC_ZERO_RSTACK;
+							profile.desync_zero_attack = DESYNC_ZERO_RSTACK;
 						else if(!strcmp(p, FIRST_ATTACKS_NAMES.at(DESYNC_FIRST_DISORDER).c_str()))
-							settings.desync_first_attack = DESYNC_FIRST_DISORDER;
+							profile.desync_first_attack = DESYNC_FIRST_DISORDER;
 						else if(!strcmp(p, FIRST_ATTACKS_NAMES.at(DESYNC_FIRST_DISORDER_FAKE).c_str()))
-							settings.desync_first_attack = DESYNC_FIRST_DISORDER_FAKE;
+							profile.desync_first_attack = DESYNC_FIRST_DISORDER_FAKE;
 						else if(!strcmp(p, FIRST_ATTACKS_NAMES.at(DESYNC_FIRST_SPLIT).c_str()))
-							settings.desync_first_attack = DESYNC_FIRST_SPLIT;
+							profile.desync_first_attack = DESYNC_FIRST_SPLIT;
 						else if(!strcmp(p, FIRST_ATTACKS_NAMES.at(DESYNC_FIRST_SPLIT_FAKE).c_str()))
-							settings.desync_first_attack = DESYNC_FIRST_SPLIT_FAKE;
+							profile.desync_first_attack = DESYNC_FIRST_SPLIT_FAKE;
 						else {
 							std::cerr << "-desync-attacks invalid argument" << std::endl;
 							return -1;
@@ -452,13 +453,13 @@ int parse_cmdline(int argc, char* argv[]) {
 				return -1;
 
 			case 12: // daemon
-				settings.daemon = true;
+				Settings_perst.daemon = true;
 
 				break;
 
 			case 13: // wsize
-				settings.window_size = atoi(optarg);
-				if(settings.window_size < 1 || settings.window_size > 65535) {
+				profile.window_size = atoi(optarg);
+				if(profile.window_size < 1 || profile.window_size > 65535) {
 					std::cerr << "-wsize invalid argument" << std::endl;
 					return -1;
 				}
@@ -466,8 +467,8 @@ int parse_cmdline(int argc, char* argv[]) {
 				break;
 
 			case 14: // wsfactor
-				settings.window_scale_factor = atoi(optarg);
-				if(settings.window_scale_factor < 0 || settings.window_scale_factor > 14) {
+				profile.window_scale_factor = atoi(optarg);
+				if(profile.window_scale_factor < 0 || profile.window_scale_factor > 14) {
 					std::cerr << "-wsfactor invalid argument" << std::endl;
 					return -1;
 				}
@@ -478,7 +479,7 @@ int parse_cmdline(int argc, char* argv[]) {
 				{
 					std::string temp = optarg;
 					if(!curr_profile_name.empty())
-						add_profile(curr_profile_name, settings);
+						add_profile(curr_profile_name, profile);
 
 					curr_profile_name = temp;
 				}
@@ -489,9 +490,9 @@ int parse_cmdline(int argc, char* argv[]) {
 	}
 
 	if(!curr_profile_name.empty())
-		add_profile(curr_profile_name, settings);
+		add_profile(curr_profile_name, profile);
 	else
-		Settings = settings;
+		Profile = profile;
 
 	return 0;
 }
@@ -501,7 +502,7 @@ void print_help() {
 }
 
 void print_info() {
-	std::cout << "Proxy running on " << Settings.server_address << ':' << Settings.server_port << "..." << std::endl
+	std::cout << "Proxy running on " << Settings_perst.server_address << ':' << Settings_perst.server_port << "..." << std::endl
 	<< "To get help run program with --help argument." << std::endl
 	<< "To auto configure run program with --auto argument" << std::endl;
 }
@@ -529,7 +530,7 @@ int main(int argc, char* argv[]) {
 		if(change_profile() == -1)
 			return -1; //exit_failure();
 
-	if(Settings.doh)
+	if(Profile.doh)
 		if(load_ca_bundle() == -1)
 			return -1; //exit_failure();
 
@@ -550,8 +551,8 @@ int main(int argc, char* argv[]) {
 	// Server address options
 	struct sockaddr_in server_address;
 	server_address.sin_family = AF_INET;
-	inet_pton(AF_INET, Settings.server_address.c_str(), &(server_address.sin_addr));
-	server_address.sin_port = htons(Settings.server_port);
+	inet_pton(AF_INET, Settings_perst.server_address.c_str(), &(server_address.sin_addr));
+	server_address.sin_port = htons(Settings_perst.server_port);
 
 	// Bind socket
 	if(bind(server_socket, (struct sockaddr *) &server_address, sizeof(server_address)) == -1)
@@ -570,7 +571,7 @@ int main(int argc, char* argv[]) {
 	// Show info
 	print_info();
 
-	if(Settings.daemon)
+	if(Settings_perst.daemon)
 		daemonize();
 
 	// Start route monitor thread to correctly change profiles

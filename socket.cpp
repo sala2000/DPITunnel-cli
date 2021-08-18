@@ -17,7 +17,7 @@
 #include <thread>
 #include <unistd.h>
 
-extern struct Settings_s Settings;
+extern struct Profile_s Profile;
 
 int count_hops(std::string server_ip, int server_port) {
 	int sock;
@@ -155,8 +155,8 @@ int init_remote_server_socket(int & server_socket, std::string server_ip, int se
 	}
 
 	// If window size specified by user, set maximum possible window scale to 128 to make server split Server Hello
-	if(Settings.window_scale_factor != -1) {
-		int buflen = 65536 << (Settings.window_scale_factor - 1);
+	if(Profile.window_scale_factor != -1) {
+		int buflen = 65536 << (Profile.window_scale_factor - 1);
 		if(setsockopt(server_socket, SOL_SOCKET, SO_RCVBUFFORCE, &buflen, sizeof(buflen)) < 0) {
 			std::cerr << "Can't setsockopt on socket. Errno: " << std::strerror(errno) << std::endl;
 			return -1;
