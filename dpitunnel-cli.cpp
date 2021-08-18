@@ -25,6 +25,7 @@
 #include <unistd.h>
 
 const std::string CONNECTION_ESTABLISHED_RESPONSE("HTTP/1.1 200 Connection established\r\n\r\n");
+const std::string CONNECTION_ERROR_RESPONSE("HTTP/1.1 0 Connection establish problem (read logs)\r\n\r\n");
 const std::string PROCESS_NAME("DPITunnel-cli");
 int Interrupt_pipe[2];
 std::atomic<bool> stop_flag;
@@ -42,6 +43,7 @@ void process_client_cycle(int client_socket) {
 	if(setsockopt(client_socket, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout_sock, sizeof(timeout_sock)) < 0 ||
 		setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout_sock, sizeof(timeout_sock)) < 0) {
 		std::cerr << "Can't setsockopt on socket. Errno: " << std::strerror(errno) << std::endl;
+		close(client_socket);
 		return;
 	}
 
@@ -64,6 +66,7 @@ void process_client_cycle(int client_socket) {
 	std::string server_method;
 	if(parse_request(buffer, server_method, server_host, server_port) == -1) {
 		std::cerr << "Can't parse first request" << std::endl;
+		send_string(client_socket, CONNECTION_ERROR_RESPONSE, CONNECTION_ERROR_RESPONSE.size());
 		close(client_socket);
 		return;
 	}
@@ -91,6 +94,7 @@ void process_client_cycle(int client_socket) {
 
 	// Resolve server ip
 	if(resolve_host(server_host, server_ip) == -1) {
+		send_string(client_socket, CONNECTION_ERROR_RESPONSE, CONNECTION_ERROR_RESPONSE.size());
 		close(client_socket);
 		return;
 	}
@@ -114,6 +118,7 @@ void process_client_cycle(int client_socket) {
 			flag = false;
 			if(sniff_thread.joinable()) sniff_thread.join();
 		}
+		send_string(client_socket, CONNECTION_ERROR_RESPONSE, CONNECTION_ERROR_RESPONSE.size());
 		close(client_socket);
 		return;
 	}
@@ -129,6 +134,7 @@ void process_client_cycle(int client_socket) {
 			flag = false;
 			if(sniff_thread.joinable()) sniff_thread.join();
 		}
+		send_string(client_socket, CONNECTION_ERROR_RESPONSE, CONNECTION_ERROR_RESPONSE.size());
 		close(server_socket);
 		close(client_socket);
 		return;
@@ -144,6 +150,7 @@ void process_client_cycle(int client_socket) {
 			flag = false;
 			if(sniff_thread.joinable()) sniff_thread.join();
 		}
+		send_string(client_socket, CONNECTION_ERROR_RESPONSE, CONNECTION_ERROR_RESPONSE.size());
 		close(server_socket);
 		close(client_socket);
 		return;
@@ -162,6 +169,7 @@ void process_client_cycle(int client_socket) {
 		if(sniff_thread.joinable()) sniff_thread.join();
 		if(status == -1) {
 			std::cerr << "Failed to capture handshake packet" << std::endl;
+			send_string(client_socket, CONNECTION_ERROR_RESPONSE, CONNECTION_ERROR_RESPONSE.size());
 			close(server_socket);
 			close(client_socket);
 			return;
@@ -179,6 +187,7 @@ void process_client_cycle(int client_socket) {
 	// Send packet we received previously if it's http connection
 	} else if(!is_https) {
 		if(send_string(server_socket, buffer, last_char) == -1) {
+			send_string(client_socket, CONNECTION_ERROR_RESPONSE, CONNECTION_ERROR_RESPONSE.size());
 			close(server_socket);
 			close(client_socket);
 			return;
