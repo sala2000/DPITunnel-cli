@@ -4,6 +4,9 @@
 
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <cstring>
+#include <iostream>
 #include <vector>
 #include <unistd.h>
 
@@ -144,4 +147,17 @@ void daemonize() {
 	/* stdout */
 	fd = dup(0);
 	/* stderror */
+}
+
+int ignore_sigpipe() {
+	struct sigaction act;
+	std::memset(&act, 0, sizeof(act));
+	act.sa_handler = SIG_IGN;
+	act.sa_flags = SA_RESTART;
+	if(sigaction(SIGPIPE, &act, NULL)) {
+		std::cerr << "Failed ignore SIGPIPE. Errno: " << std::strerror(errno) << std::endl;
+		return -1;
+	}
+
+	return 0;
 }

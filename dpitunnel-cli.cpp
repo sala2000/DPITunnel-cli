@@ -521,6 +521,7 @@ int main(int argc, char* argv[]) {
 		return -1; //exit_failure();
 	} else if(res == -2)
 		return 0;
+	ignore_sigpipe();
 
 	// Init interrupt pipe (used to interrupt poll() calls)
 	pipe(Interrupt_pipe);
