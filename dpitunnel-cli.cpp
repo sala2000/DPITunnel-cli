@@ -15,7 +15,11 @@
 #include <cstring>
 #include <fcntl.h>
 #include <iostream>
+#include <future>
+#include <mutex>
 #include <thread>
+#include <signal.h>
+#include <unordered_map>
 #include <sys/prctl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -32,6 +36,8 @@ std::atomic<bool> stop_flag;
 struct Settings_perst_s Settings_perst;
 struct Profile_s Profile;
 extern std::map<std::string, struct Profile_s> Profiles;
+std::mutex Threads_map_mutex;
+std::unordered_map<std::thread::id, std::thread> Threads;
 
 void process_client_cycle(int client_socket) {
 	// last_char indicates position of string end
@@ -103,7 +109,7 @@ void process_client_cycle(int client_socket) {
 	// If need get SYN, ACK packet sent by server during handshake
 	std::atomic<bool> flag(true);
 	std::atomic<int> local_port(-1);
-	int status;
+	std::atomic<int> status;
 	std::thread sniff_thread;
 	std::string sniffed_packet;
 	if(Profile.desync_attacks) {
@@ -168,7 +174,7 @@ void process_client_cycle(int client_socket) {
 	if(Profile.desync_attacks) {
 		// Get received SYN, ACK packet
 		if(sniff_thread.joinable()) sniff_thread.join();
-		if(status == -1) {
+		if(status.load() == -1) {
 			std::cerr << "Failed to capture handshake packet" << std::endl;
 			send_string(client_socket, CONNECTION_ERROR_RESPONSE, CONNECTION_ERROR_RESPONSE.size());
 			close(server_socket);
@@ -217,7 +223,7 @@ void process_client_cycle(int client_socket) {
 	fds[2].events = POLLIN;
 
 	// Set poll() timeout
-	int timeout = 20000;
+	int timeout = -1;
 
 	bool is_transfer_failure = false;
 
@@ -229,7 +235,7 @@ void process_client_cycle(int client_socket) {
 			std::cerr << "Poll error. Errno:" << std::strerror(errno) << std::endl;
 			break;
 		} else if (ret == 0)
-                                break; // Timeout happened. No one wants to transfer data, close socket
+                                continue;
 		else {
 			if(fds[0].revents & POLLERR || fds[1].revents & POLLERR ||
 			   fds[0].revents & POLLHUP || fds[1].revents & POLLHUP ||
@@ -279,7 +285,7 @@ void accept_client_cycle(int server_socket) {
 	fds[1].events = POLLIN;
 
 	// Set poll() timeout
-	int timeout = 10000;
+	int timeout = -1;
 
 	while(!stop_flag.load()) {
 		int ret = poll(fds, 2, timeout);
@@ -312,14 +318,39 @@ void accept_client_cycle(int server_socket) {
 				}
 
 				// Create new thread
-				std::thread t1(process_client_cycle, client_socket);
-				t1.detach();
+				auto thread_starter = std::promise<void>();
+				std::thread t1([starter_future = thread_starter.get_future(), socket = client_socket]() mutable {
+					starter_future.wait();
+					process_client_cycle(socket);
+					// Remove thread from map, contains all running threads
+					{
+						std::lock_guard<std::mutex> lock(Threads_map_mutex);
+						if(!stop_flag.load()) {
+							auto found = Threads.find(std::this_thread::get_id());
+							if(found != Threads.end()) {
+								found->second.detach();
+								Threads.erase(std::this_thread::get_id());
+							}
+						}
+					}
+					});
+				// Add thread to map, contains all running threads
+				{
+					std::lock_guard<std::mutex> lock(Threads_map_mutex);
+					Threads.emplace(t1.get_id(), std::move(t1));
+				}
+				thread_starter.set_value();
+				
 			}
 
 			fds[0].revents = 0;
 			fds[1].revents = 0;
 		}
 	}
+
+	// Wait for all threads to finish
+	for(auto & imap : Threads)
+		if(imap.second.joinable()) imap.second.join();
 }
 
 int parse_cmdline(int argc, char* argv[]) {
@@ -507,6 +538,14 @@ void print_info() {
 	<< "To auto configure run program with --auto argument" << std::endl;
 }
 
+void sig_int_handler(int signum) {
+	// Stop program
+	stop_flag.store(true);
+	// Interrupt poll()
+	close(Interrupt_pipe[0]);
+	close(Interrupt_pipe[1]);	
+}
+
 int main(int argc, char* argv[]) {
 	// Set process name
         prctl(PR_SET_NAME, PROCESS_NAME.c_str(), NULL, NULL, NULL);
@@ -576,14 +615,28 @@ int main(int argc, char* argv[]) {
 		daemonize();
 
 	// Start route monitor thread to correctly change profiles
-	if(!Profiles.empty()) {
-		std::thread t1(route_monitor_thread);
-		t1.detach();
-	}
+	std::thread t1;
+	if(!Profiles.empty())
+		t1 = std::thread(route_monitor_thread);
 
-	accept_client_cycle(server_socket);
+	// Register ctrl-c and terminate handlers
+	struct sigaction signalAction;
+	signalAction.sa_handler = sig_int_handler;
+	sigemptyset(&signalAction.sa_mask);
+	signalAction.sa_flags = 0;
+	sigaction(SIGINT, &signalAction, NULL);
+	sigaction(SIGTERM, &signalAction, NULL);
+
+	// Start accepting clients
+	std::thread t2(accept_client_cycle, server_socket);
+	t2.join();
+
+	// Oops, seems users asked program to exit or accept_client_cycle_crashed
 
 	// Deinit
+	std::cout << "Quitting..." << std::endl;
+	if(t1.joinable()) t1.join();
+	close(server_socket);
 
 	return 0;
 }

@@ -4,6 +4,7 @@
 #include "desync.h"
 
 #include <arpa/inet.h>
+#include <atomic>
 #include <cerrno>
 #include <cstring>
 #include <chrono>
@@ -23,7 +24,7 @@ int count_hops(std::string server_ip, int server_port) {
 	int sock;
 	std::atomic<bool> flag(true);
 	std::atomic<int> local_port_atom(-1);
-	int status;
+	std::atomic<int> status;
 	std::thread sniff_thread;
 	std::string sniffed_handshake_packet;
 	sniff_thread = std::thread(sniff_handshake_packet, &sniffed_handshake_packet,
@@ -55,7 +56,7 @@ int count_hops(std::string server_ip, int server_port) {
 
 	// Get received ACK packet
 	if(sniff_thread.joinable()) sniff_thread.join();
-	if(status == -1) {
+	if(status.load() == -1) {
 		std::cerr << "Failed to capture handshake packet" << std::endl;
 		close(sock);
 		return -1;

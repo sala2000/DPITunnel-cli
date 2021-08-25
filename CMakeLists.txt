@@ -1,6 +1,8 @@
 # Set the minimum version of CMake that can be used
 cmake_minimum_required(VERSION 3.5)
 
+set(CMAKE_CXX_STANDARD 14)
+
 # Set the project name
 project(DPITunnel-cli)
 

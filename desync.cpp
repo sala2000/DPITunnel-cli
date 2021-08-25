@@ -137,7 +137,7 @@ int sniff_ack_packet(std::string * packet, std::string ip_srv, int port_srv,
 }
 
 int sniff_handshake_packet(std::string * packet, std::string ip_srv,
-				int port_srv, std::atomic<int> * local_port_atom, std::atomic<bool> * flag, int * status) {
+				int port_srv, std::atomic<int> * local_port_atom, std::atomic<bool> * flag, std::atomic<int> * status) {
 
 	if(packet == NULL || flag == NULL) return -1;
 	std::map<int, std::string> packets;
@@ -185,7 +185,8 @@ int sniff_handshake_packet(std::string * packet, std::string ip_srv,
 		auto stop = std::chrono::high_resolution_clock::now();
 		if(std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() > Profile.packet_capture_timeout) {
 			close(sockfd);
-			return *status = -1;
+			(*status).store(-1);
+			return -1;
 		}
 
 		// Check state
@@ -236,7 +237,8 @@ int sniff_handshake_packet(std::string * packet, std::string ip_srv,
 
 	close(sockfd);
 
-	return *status = 0;
+	(*status).store(0);
+	return 0;
 }
 
 std::string form_packet(std::string packet_raw, const char * packet_data, unsigned int packet_data_size, unsigned short id,

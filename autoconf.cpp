@@ -8,6 +8,7 @@
 #include "utils.h"
 
 #include <algorithm>
+#include <atomic>
 #include <arpa/inet.h>
 #include <cerrno>
 #include <chrono>
@@ -253,7 +254,7 @@ int test_desync_attack(std::string host, std::string ip, int port, bool is_https
 	int socket;
         std::atomic<bool> flag(true);
 	std::atomic<int> local_port(-1);
-	int status;
+	std::atomic<int> status;
         std::thread sniff_thread;
         std::string sniffed_packet;
         sniff_thread = std::thread(sniff_handshake_packet, &sniffed_packet,
@@ -297,7 +298,7 @@ int test_desync_attack(std::string host, std::string ip, int port, bool is_https
 
         // Get received ACK packet
         if(sniff_thread.joinable()) sniff_thread.join();
-	if(status == -1) {
+	if(status.load() == -1) {
 		std::cerr << "Failed to capture handshake packet" << std::endl;
 		close(socket);
 		return -1;
