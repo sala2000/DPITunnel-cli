@@ -380,18 +380,18 @@ int run_autoconf() {
 		host.erase(port_start_position, host.size() - port_start_position + 1);
 	}
 
-	// Load CA store to validate SSL certificates
+	// Load CA store to validate SSL certificates and connect to DoH server
 	X509_STORE *store;
 	SSL_CTX *ctx;
+	std::cout << "CA bundle path (press enter to use default location " << Settings_perst.ca_bundle_path << "): ";
+	std::getline(std::cin, tmp);
+	if(!tmp.empty())
+		Settings_perst.ca_bundle_path = tmp;
+
+	if(load_ca_bundle() == -1)
+		return -1;
+
 	if(is_https) {
-		std::cout << "CA bundle path (press enter to use default location " << Settings_perst.ca_bundle_path << "): ";
-		std::getline(std::cin, tmp);
-		if(!tmp.empty())
-			Settings_perst.ca_bundle_path = tmp;
-
-		if(load_ca_bundle() == -1)
-			return -1;
-
 		// Init openssl
 		SSL_library_init();
 		OpenSSL_add_all_algorithms();
