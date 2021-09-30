@@ -31,6 +31,32 @@
 const std::string CONNECTION_ESTABLISHED_RESPONSE("HTTP/1.1 200 Connection established\r\n\r\n");
 const std::string CONNECTION_ERROR_RESPONSE("HTTP/1.1 0 Connection establish problem (read logs)\r\n\r\n");
 const std::string PROCESS_NAME("DPITunnel-cli");
+const std::string HELP_PAGE(
+			"DPITunnel-cli, program for bypassing internet censorship without a proxy server.\n"
+			"\n"
+			"Usage:\n"
+			"  dpitunnel-cli [options]\n"
+			"  dpitunnel-cli [--ip <bind_ip>][--port <bind_port>][--ca-bundle-path <path>][--daemon] <--profile <net_interface_name>[@<wifi_name>] [options]>...\n"
+			"  dpitunnel-cli --auto\n"
+			"\n"
+			"Options:\n"
+			"  --auto\t\t\t\t\tchoose the settings for current ISP automatically\n"
+			"  --profile=<net_interface_name>[@<wifi_name>]\tsettings for a specific connection\n"
+			"  --help\t\t\t\t\tshow this message\n"
+			"  --ip=<ip>\t\t\t\t\tIP to bind the http proxy. Default: 0.0.0.0\n"
+			"  --port=<port>\t\t\t\t\tport to bind http proxy. Default: 8080\n"
+			"  --ca-bundle-path=<path>\t\t\tpath to CA certificates bundle in PEM format. Default: ./ca.bundle\n"
+			"  --daemon\t\t\t\t\tdaemonize program\n"
+			"  --buffer-size=<size_in_bytes>\t\t\tsize of buffers. Default: 512\n"
+			"  --desync-attacks=[<mode0>][,<mode1>]\t\tmode0: fake rst rstack. mode1: disorder disorder_fake split split_fake\n"
+			"  --split-at-sni\t\t\t\tsplit Client Hello at SNI\n"
+			"  --split-position=<offset_in_bytes>\t\tsplit Client Hello at <offset_in_bytes>. Default: 3\n"
+			"  --ttl=<number>\t\t\t\tTTL for fake packets\n"
+			"  --use-doh\t\t\t\t\tresolve hosts over DoH server\n"
+			"  --doh-server=<url>\t\t\t\tDoH server URL. Default: https://dns.google/dns-query\n"
+			"  --wsize=<number>\t\t\t\tTCP window size. Used to ask server to split Server Hello\n"
+			"  --wsfactor=<number>\t\t\t\tTCP window scale factor. Used with wsize option"
+);
 int Interrupt_pipe[2];
 std::atomic<bool> stop_flag;
 struct Settings_perst_s Settings_perst;
@@ -529,7 +555,7 @@ int parse_cmdline(int argc, char* argv[]) {
 }
 
 void print_help() {
-	std::cout << "Help!" << std::endl;
+	std::cout << HELP_PAGE << std::endl;
 }
 
 void print_info() {
