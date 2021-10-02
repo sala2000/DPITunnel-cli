@@ -612,6 +612,7 @@ int main(int argc, char* argv[]) {
 	int opt = 1;
 	if(setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
 		std::cerr << "Can't setsockopt on server socket. Errno: " << std::strerror(errno) << std::endl;
+		close(server_socket);
         	return -1; //exit_failure();
 	}
 
@@ -625,6 +626,7 @@ int main(int argc, char* argv[]) {
 	if(bind(server_socket, (struct sockaddr *) &server_address, sizeof(server_address)) == -1)
 	{
 		std::cerr << "Can't bind server socket. Errno: " << std::strerror(errno) << std::endl;
+		close(server_socket);
 		return -1; //exit_failure();
 	}
 
@@ -632,6 +634,7 @@ int main(int argc, char* argv[]) {
 	if(listen(server_socket, 4096) == -1)
 	{
 		std::cerr << "Can't listen to server socket. Errno: " << std::strerror(errno) << std::endl;
+		close(server_socket);
 		return -1; //exit_failure();
 	}
 
@@ -658,7 +661,7 @@ int main(int argc, char* argv[]) {
 	std::thread t2(accept_client_cycle, server_socket);
 	t2.join();
 
-	// Oops, seems users asked program to exit or accept_client_cycle_crashed
+	// Oops, seems user asked program to exit or accept_client_cycle crashed
 
 	// Deinit
 	std::cout << "Quitting..." << std::endl;
