@@ -2,6 +2,14 @@
 cmake_minimum_required(VERSION 3.5)
 
 set(CMAKE_CXX_STANDARD 14)
+cmake_policy(SET CMP0065 NEW)
+
+if(STATIC_BINARY)
+	message("Building static portable binary with small size")
+	set(CMAKE_C_FLAGS " -ffunction-sections -Wl,-gc-sections -s")
+	set(CMAKE_CXX_FLAGS " -ffunction-sections -Wl,-gc-sections -s")
+endif()
+
 
 # Set the project name
 project(DPITunnel-cli)
@@ -26,6 +34,10 @@ add_executable(DPITunnel-cli-exec
 		utils.cpp
 )
 
+if(STATIC_BINARY)
+	target_link_libraries(DPITunnel-cli-exec -static)
+endif()
+
 # Set the directories that should be included in the build command for this target
 target_include_directories(DPITunnel-cli-exec
 		PRIVATE
@@ -38,6 +50,10 @@ target_include_directories(DPITunnel-cli-exec
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
+
+if(STATIC_BINARY)
+	set(OPENSSL_USE_STATIC_LIBS TRUE)
+endif()
 find_package(OpenSSL REQUIRED)
 
 target_link_libraries(DPITunnel-cli-exec
