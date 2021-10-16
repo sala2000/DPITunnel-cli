@@ -76,7 +76,7 @@ int sniff_ack_packet(std::string * packet, std::string ip_srv, int port_srv,
 		return -1;
 	}
 
-	struct pollfd fds[2];
+	struct pollfd fds[1];
 
 	// fds[0] is sniff socket
 	fds[0].fd = sockfd;
@@ -150,7 +150,7 @@ int sniff_handshake_packet(std::string * packet, std::string ip_srv,
                 return -1;
         }
 
-	struct pollfd fds[2];
+	struct pollfd fds[1];
 
 	// fds[0] is sniff socket
 	fds[0].fd = sockfd;

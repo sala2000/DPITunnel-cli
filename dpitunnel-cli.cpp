@@ -53,8 +53,12 @@ const std::string HELP_PAGE(
 			"  --split-at-sni\t\t\t\tsplit Client Hello at SNI\n"
 			"  --split-position=<offset_in_bytes>\t\tsplit Client Hello at <offset_in_bytes>. Default: 3\n"
 			"  --ttl=<number>\t\t\t\tTTL for fake packets\n"
-			"  --use-doh\t\t\t\t\tresolve hosts over DoH server\n"
+			"  --doh\t\t\t\t\t\tresolve hosts over DoH server\n"
 			"  --doh-server=<url>\t\t\t\tDoH server URL. Default: https://dns.google/dns-query\n"
+			"  --builtin-dns\t\t\t\t\tindependently resolve hostnames, don't use getaddrinfo. You must enable it on Android\n"
+			"  \tand other systems that don't have /etc/resolv.conf\n"
+			"  --builtin-dns-ip=<ip>\t\t\t\tDNS server IP used by builtin resolver. Default: 8.8.8.8\n"
+			"  --builtin-dns-port=<port>\t\t\tDNS server port used by builtin resolver. Default: 53\n"
 			"  --wsize=<number>\t\t\t\tTCP window size. Used to ask server to split Server Hello\n"
 			"  --wsfactor=<number>\t\t\t\tTCP window scale factor. Used with wsize option"
 );
@@ -388,7 +392,7 @@ int parse_cmdline(int argc, char* argv[]) {
 		{"buffer-size", required_argument, 0, 0}, // id 2
 		{"split-position", required_argument, 0, 0}, // id 3
 		{"ttl", required_argument, 0, 0}, // id 4
-		{"use-doh", no_argument, 0, 0}, // id 5
+		{"doh", no_argument, 0, 0}, // id 5
 		{"doh-server", required_argument, 0, 0}, //id 6
 		{"ca-bundle-path", required_argument, 0, 0}, // id 7
 		{"split-at-sni", no_argument, 0, 0}, // id 8
@@ -399,6 +403,9 @@ int parse_cmdline(int argc, char* argv[]) {
 		{"wsize", required_argument, 0, 0}, // id 13
 		{"wsfactor", required_argument, 0, 0}, // id 14
 		{"profile", required_argument, 0, 0}, // id 15
+		{"builtin-dns", no_argument, 0, 0}, // id 16
+		{"builtin-dns-ip", required_argument, 0, 0}, // id 17
+		{"builtin-dns-port", required_argument, 0, 0}, // id 18
 		{NULL, 0, NULL, 0}
 	};
 
@@ -415,7 +422,7 @@ int parse_cmdline(int argc, char* argv[]) {
 
 			case 1: // port
 				Settings_perst.server_port = atoi(optarg);
-				if(Settings_perst.server_port < 0 || Settings_perst.server_port > 65535) {
+				if(Settings_perst.server_port < 1 || Settings_perst.server_port > 65535) {
 					std::cerr << "-port invalid argument" << std::endl;
 					return -1;
 				}
@@ -449,7 +456,7 @@ int parse_cmdline(int argc, char* argv[]) {
 
 				break;
 
-			case 5: // use-doh
+			case 5: // doh
 				profile.doh = true;
 
 				break;
@@ -540,6 +547,25 @@ int parse_cmdline(int argc, char* argv[]) {
 						add_profile(curr_profile_name, profile);
 
 					curr_profile_name = temp;
+				}
+
+				break;
+
+			case 16: // builtin-dns
+				Settings_perst.builtin_dns = true;
+
+				break;
+
+			case 17: // builtin-dns-ip
+				Settings_perst.builtin_dns_ip = optarg;
+
+				break;
+
+			case 18: // builtin-dns-port
+				Settings_perst.builtin_dns_port = atoi(optarg);
+				if(Settings_perst.builtin_dns_port < 1 || Settings_perst.builtin_dns_port > 65535) {
+					std::cerr << "-builtin-dns-port invalid argument" << std::endl;
+					return -1;
 				}
 
 				break;

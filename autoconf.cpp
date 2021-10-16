@@ -331,7 +331,7 @@ void show_configured_options(std::string host, std::string ip, int port, bool is
 		display_ttl = true;
 	}
 	std::cout << "Configuration successful! Apply these options when run program:" << std::endl;
-	std::cout << "-use-doh ";
+	std::cout << "-doh ";
 	std::cout << "-doh-server " << Profile.doh_server << ' ';
 	std::cout << "-split-at-sni ";
 	if(Profile.window_size != 0)
@@ -447,10 +447,25 @@ int run_autoconf() {
 	Profile.doh = true;
 	std::string ip;
 	if(resolve_host(host, ip) == -1) {
-		std::cout << "Failed to resolve host " << host << std::endl;
-		if(is_https)
-			SSL_CTX_free(ctx);
-		return -1;
+		// Try with builtin DNS
+		std::cout << "DNS server (press enter to use default " << Settings_perst.builtin_dns_ip << ". Can contain port): ";
+		std::getline(std::cin, tmp);
+		Settings_perst.builtin_dns = true;
+		if(!tmp.empty()) {
+			// Check if port exists
+			size_t port_start_position = tmp.find(':');
+			if(port_start_position == std::string::npos) {
+				Settings_perst.builtin_dns_ip = tmp.substr(0, port_start_position);
+				Settings_perst.builtin_dns_port = std::stoi(tmp.substr(port_start_position + 1, tmp.size() - port_start_position));
+			} else Settings_perst.builtin_dns_ip = tmp;
+		}
+
+		if(resolve_host(host, ip) == -1) {
+			std::cout << "Failed to resolve host " << host << std::endl;
+			if(is_https)
+				SSL_CTX_free(ctx);
+			return -1;
+		}
 	}
 	std::cout << host << " IP is " << ip << std::endl << std::endl;
 
