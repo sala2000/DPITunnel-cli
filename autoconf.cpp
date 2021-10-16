@@ -331,6 +331,11 @@ void show_configured_options(std::string host, std::string ip, int port, bool is
 		display_ttl = true;
 	}
 	std::cout << "Configuration successful! Apply these options when run program:" << std::endl;
+	if(Settings_perst.builtin_dns) {
+		std::cout << "-builtin-dns ";
+		std::cout << "-builtin-dns-ip " << Settings_perst.builtin_dns_ip << ' ';
+		std::cout << "-builtin-dns-port " << Settings_perst.builtin_dns_port << ' ';
+	}
 	std::cout << "-doh ";
 	std::cout << "-doh-server " << Profile.doh_server << ' ';
 	std::cout << "-split-at-sni ";
