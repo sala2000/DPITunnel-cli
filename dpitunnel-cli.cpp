@@ -547,6 +547,7 @@ int parse_cmdline(int argc, char* argv[]) {
 						add_profile(curr_profile_name, profile);
 
 					curr_profile_name = temp;
+					profile = {};
 				}
 
 				break;

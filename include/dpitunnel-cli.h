@@ -35,7 +35,7 @@ static const std::map<Desync_first_attacks, std::string> FIRST_ATTACKS_NAMES = {
 struct Profile_s {
 	unsigned int buffer_size = 512;
 	unsigned int split_position = 3;
-	unsigned short fake_packets_ttl = 10;
+	unsigned short fake_packets_ttl = 1;
 	unsigned short window_size = 0;
 	short window_scale_factor = -1;
 
