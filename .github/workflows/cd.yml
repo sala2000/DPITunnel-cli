@@ -12,6 +12,7 @@ jobs:
       matrix:
         include:
           - arch: amd64
+          - arch: x86
           - arch: armhf
           - arch: arm64
     name: Build on ${{ matrix.arch }}
