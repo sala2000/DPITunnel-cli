@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <vector>
@@ -119,6 +120,23 @@ void get_tls_sni(const std::string & bytes, unsigned int last_char, unsigned int
 		} else it += ext_len;
 	}
 	start_pos = 0; len = 0;
+}
+
+bool validate_http_method(std::string method) {
+	static const std::vector<std::string> valid_http_methods {
+		"CONNECT",
+		"DELETE",
+		"GET",
+		"HEAD",
+		"OPTIONS",
+		"PATCH",
+		"POST",
+		"PUT",
+		"TRACE"
+	};
+	for (auto & c: method) c = toupper(c);
+
+	return std::find(valid_http_methods.begin(), valid_http_methods.end(), method) != valid_http_methods.end();
 }
 
 void daemonize() {

@@ -110,25 +110,8 @@ void process_client_cycle(int client_socket) {
 	}
 	is_https = server_method == "CONNECT";
 	// Remove proxy connection specific parts
-	if(!is_https) {
-		size_t method_end_position = buffer.find(' ');
-		if(method_end_position != std::string::npos) {
-			if(buffer.find("http://", method_end_position + 1) == method_end_position + 1) {
-				buffer.erase(method_end_position + 1, 7);
-				last_char -= 7;
-			}
-			if(buffer.find(server_host, method_end_position + 1) == method_end_position + 1) {
-				buffer.erase(method_end_position + 1, server_host.size());
-				last_char -= server_host.size();
-			}
-		}
-
-		size_t proxy_connection_hdr_start = buffer.find("Proxy-Connection: keep-alive\r\n");
-		if(proxy_connection_hdr_start != std::string::npos) {
-			buffer.erase(proxy_connection_hdr_start, 30);
-			last_char -= 30;
-		}
-	}
+	if(!is_https)
+		remove_proxy_strings(buffer, last_char);
 
 	// Resolve server ip
 	if(resolve_host(server_host, server_ip) == -1) {
@@ -278,6 +261,9 @@ void process_client_cycle(int client_socket) {
 				// Transfer data
 				if(recv_string(client_socket, buffer, last_char) == -1)
                 			is_transfer_failure = true;
+
+				if(!is_https)
+					remove_proxy_strings(buffer, last_char);
 
 				if(send_string(server_socket, buffer, last_char) == -1)
                         		is_transfer_failure = true;
